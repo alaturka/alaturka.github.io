@@ -1,0 +1,72 @@
+
+[ -n "${BASH_VERSION:-}"        ] || { echo >&2 'Bash required.';                     exit 1; }
+[[ ${BASH_VERSINFO[0]:-} -ge 4 ]] || { echo >&2 'Bash version 4 or higher required.'; exit 1; }
+
+set -Eeuo pipefail; shopt -s nullglob; [[ -z ${TRACE:-} ]] || set -x; unset CDPATH; IFS=$' \t\n'
+
+export LC_ALL=C.UTF-8 LANG=C.UTF-8
+
+# shellcheck disable=2034
+declare -gr PROGNAME=${0##*/} # Program name
+
+# shellcheck disable=2120
+.cry() {
+	if [[ $# -gt 0 ]]; then
+		echo -e >&2 "W: $*"
+	else
+		echo >&2 ""
+	fi
+}
+
+# shellcheck disable=2120
+.die() {
+	if [[ $# -gt 0 ]]; then
+		echo -e >&2 "E: $*"
+	else
+		echo >&2 ""
+	fi
+
+	exit 1
+}
+
+# shellcheck disable=2120
+.say() {
+	echo -e "${@-""}" >&2
+}
+
+# debug.sh - Debug utils
+
+shopt -s expand_aliases
+
+# shellcheck disable=2142
+alias .nope='echo -e "+++ ${FUNCNAME[0]}\t$*"; return'
+
+.dbg() {
+	[[ $# -gt 0 ]] || return 0
+
+	local -n dbg_=$1
+
+	echo "${!dbg_}"
+
+	local key
+	for key in "${!dbg_[@]}"; do
+		printf '  %-16s  %s\n' "${key}" "${dbg_[$key]}"
+	done | sort
+
+	echo
+}
+
+.stacktrace() {
+	local -i i=1
+
+	while [[ -n ${BASH_SOURCE[$i]:-} ]]; do
+		echo "${BASH_SOURCE[$i]}":"${BASH_LINENO[$((i-1))]}":"${FUNCNAME[$i]}"\(\)
+		i=$((i + 1))
+	done | grep -v "^${BASH_SOURCE[0]}"
+}
+
+main() {
+	:
+}
+
+main "$@"
